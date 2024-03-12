@@ -1,0 +1,123 @@
+---
+author: "Vered Chalifa-Caspi"
+date: "15.2.2024"
+output: 
+  html_document:
+    toc: true
+    toc_float: true
+    number_sections: true
+
+---
+# About
+
+This script prepares GO annotation files for functional enrichment analysis in RNA-Seq or proteomics projects.
+It uses files that were downloaded from the geneontology web site.
+The following instructions were written in December 2023 but the location of the files on GO web site may have been changed since then.
+
+Mapping of uniport IDs to GO IDs is retrieved from the Gene Ontology web site:
+(Files are available for selected organisms. Below is an example for human Proteins)
+Annotation -> Download -> GAF download page -> Homo sapiens -> entity type: protein -> file goa_human.gaf (gzip)
+Direct link to the file:
+http://geneontology.org/gene-associations/goa_human.gaf.gz
+Explanation to gaf file columns:
+https://geneontology.org/docs/go-annotation-file-gaf-format-2.1/
+
+GO ontology OBO file is available from https://geneontology.org/docs/download-ontology/
+Direct link to the file:
+https://current.geneontology.org/ontology/go-basic.obo
+
+After downloading the files, update the paths specified in section "files and directories" below.
+
+# Load libraries
+
+```{r setup, include=FALSE}
+
+library(OmnipathR)
+library(dplyr)
+library(clusterProfiler)
+```
+
+#files and directories
+
+```{r file and directories}
+
+in_dir = "input_files"
+out_dir = "Func_annot_data"
+if(!dir.exists(out_dir)) dir.create(out_dir)
+
+obo_file = file.path (in_dir, "go-basic.obo")   #GO ontology:   the gene ontology tree and term data
+gaf_file = file.path (in_dir, "goa_human.gaf")  #GO annotation: association between go terms and uniprot genes
+
+```
+
+#create go2name files
+
+```{r go2name}
+
+#doc:
+#https://r.omnipathdb.org/reference/obo_parser.html
+
+obo_data = obo_parser(obo_file)
+term2name = obo_data$names
+term2tree = obo_data$namespaces
+term_annot = left_join(x=term2tree, y=term2name, by=c("term"))
+
+go2name_bp = filter(term_annot, namespace == "P")
+
+go2name_bp = term_annot %>% filter (namespace == "P") %>% select (term, name) %>% setNames (c("GO", "Term"))
+go2name_mf = term_annot %>% filter (namespace == "F") %>% select (term, name) %>% setNames (c("GO", "Term"))
+go2name_cc = term_annot %>% filter (namespace == "C") %>% select (term, name) %>% setNames (c("GO", "Term"))
+
+write.table(go2name_bp,
+            file = file.path(out_dir,paste('GO2name_BP','tab', sep = '.')) ,
+            quote = F,
+            row.names = F,
+            sep = "\t")
+
+write.table(go2name_mf,
+            file = file.path(out_dir,paste('GO2name_MF','tab', sep = '.')) ,
+            quote = F,
+            row.names = F,
+            sep = "\t")
+
+write.table(go2name_cc,
+            file = file.path(out_dir,paste('GO2name_CC','tab', sep = '.')) ,
+            quote = F,
+            row.names = F,
+            sep = "\t")
+
+```
+
+
+#create go2gene files
+
+```{r go2gene}
+
+gaf_file = file.path(in_dir, gaf_file)
+gaf_cols = c("Database", "Protein_ID", "Gene_symbol", "Qualifier", "GO_ID", "GO_REF", "evidence_code", "With_or_From", "GO_type",
+             "Protein_name", "Synonym", "Protein_type", "Organism", "Date", "Assigned_by", "Annotation_extension", "Gene_product_form_ID")
+gaf_data = read.delim(gaf_file, sep="\t", header=F, quote="", col.names=gaf_cols, colClasses="character", comment.char=c("!"))
+
+go2gene_bp = gaf_data %>% filter (GO_type == "P") %>% select (GO_ID, Protein_ID) %>% setNames (c("GO", "Gene")) %>% clusterProfiler::buildGOmap() %>% arrange(GO)
+go2gene_mf = gaf_data %>% filter (GO_type == "F") %>% select (GO_ID, Protein_ID) %>% setNames (c("GO", "Gene")) %>% clusterProfiler::buildGOmap() %>% arrange(GO)
+go2gene_cc = gaf_data %>% filter (GO_type == "C") %>% select (GO_ID, Protein_ID) %>% setNames (c("GO", "Gene")) %>% clusterProfiler::buildGOmap() %>% arrange(GO)
+
+write.table(go2gene_bp,
+            file = file.path(out_dir,paste('GO2gene_BP','tab', sep = '.')) ,
+            quote = F,
+            row.names = F,
+            sep = "\t")
+
+write.table(go2gene_mf,
+            file = file.path(out_dir,paste('GO2gene_MF','tab', sep = '.')) ,
+            quote = F,
+            row.names = F,
+            sep = "\t")
+
+write.table(go2gene_cc,
+            file = file.path(out_dir,paste('GO2gene_CC','tab', sep = '.')) ,
+            quote = F,
+            row.names = F,
+            sep = "\t")
+```
+
