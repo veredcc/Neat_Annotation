@@ -1,3 +1,7 @@
+#Author: Vered Chalifa-Caspi
+#Bioinformatics Core Facility, Ben-Gurion University
+#veredcc@bgu.ac.il
+
 #This script does two things:
 #creates the files for upload to "KEGG Mapper – Color” tool
 #counts the no. of genes per pathway per cluster

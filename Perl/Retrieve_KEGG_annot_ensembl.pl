@@ -1,4 +1,6 @@
-#Author: Vered Caspi
+#Author: Vered Chalifa-Caspi
+#Bioinformatics Core Facility, Ben-Gurion University
+#veredcc@bgu.ac.il
 #Date:   31.5.2023
 
 #This script prepares KEGG annotation files for pathway enrichment analysis in RNA-Seq or proteomics projects.
