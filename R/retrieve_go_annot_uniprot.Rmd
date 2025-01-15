@@ -62,8 +62,6 @@ term2name = obo_data$names
 term2tree = obo_data$namespaces
 term_annot = left_join(x=term2tree, y=term2name, by=c("term"))
 
-go2name_bp = filter(term_annot, namespace == "P")
-
 go2name_bp = term_annot %>% filter (namespace == "P") %>% select (term, name) %>% setNames (c("GO", "Term"))
 go2name_mf = term_annot %>% filter (namespace == "F") %>% select (term, name) %>% setNames (c("GO", "Term"))
 go2name_cc = term_annot %>% filter (namespace == "C") %>% select (term, name) %>% setNames (c("GO", "Term"))

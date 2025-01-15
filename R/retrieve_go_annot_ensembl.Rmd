@@ -12,7 +12,7 @@ output:
 
 This script was taken and modified from DeSeq2 module (https://github.com/bioinfo-core-BGU/neatseq-flow-modules/tree/master/neatseq_flow_modules/Liron/DeSeq2_module)
 written by Liron Levin (levinl@bgu.ac.il).
-It retrieves annotation from Ensembl for a given organism.
+It retrieves annotation from Ensembl for a given organism and creates a descriptive annotation file and files for GO enrichment analysis
 
 # Load libraries
 

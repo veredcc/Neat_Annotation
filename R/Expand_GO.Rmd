@@ -1,0 +1,107 @@
+---
+title: "Expand GO annotations to include indirect parental terms"
+author: "Vered Chalifa-Caspi"
+date: "6.1.2025"
+output: 
+  html_document:
+    toc: true
+    toc_float: true
+    number_sections: true
+	keep_md: true
+
+---
+
+# Load libraries
+
+```{r setup, include=FALSE}
+
+library(OmnipathR)
+library(dplyr)
+library(clusterProfiler)
+
+```
+
+# Files and directories
+
+```{r files and dirs}
+
+input_dir  = "Func_annot_data"
+
+output_dir = "Func_annot_data_expanded" 
+
+GO_obo_file = "Func_annot_data/go-basic.obo" #GO ontology:   the gene ontology tree and term data
+
+```
+
+# GO2gene
+
+``` {r GO2gene}
+
+for (GO_type in c('BP', 'MF', 'CC')) {
+
+  print (GO_type)
+  go2gene_file_name = paste0("GO2gene_", GO_type, ".tab") #e.g. "GO2gene_BP.tab"
+  go2name_file_name = paste0("GO2name_", GO_type, ".tab") #e.g. "GO2gene_BP.tab"
+  
+  #expand go2gene file and place in the new directory
+  
+  in_file = file.path(input_dir, go2gene_file_name)
+  GO2gene = read.delim(in_file, sep="\t", row.names=NULL)
+  GO2gene_expanded = clusterProfiler::buildGOmap(GO2gene)
+
+  out_file = file.path(output_dir, go2gene_file_name)
+  write.table(GO2gene_expanded,
+              file = out_file,
+              quote = F,
+              row.names = F,
+              sep = "\t")
+}
+
+```
+
+# GO2name
+
+``` {r GO2name}
+
+# The existing GO2name file may miss GO names of expanded GO terms achieved in the previous step.
+# Therefore, we will get all GO names directly from the GO database, and then create GO2name files
+
+# First, you need to manually download GO ontology OBO file:
+
+# GO ontology OBO file is available from https://geneontology.org/docs/download-ontology/
+# Direct link to the file:
+# https://current.geneontology.org/ontology/go-basic.obo
+
+# After downloading the files, update the GO OBO file path specified in section "files and directories" above.
+
+#doc:
+#https://r.omnipathdb.org/reference/obo_parser.html
+
+obo_data = obo_parser(GO_obo_file)
+term2name = obo_data$names
+term2tree = obo_data$namespaces
+term_annot = left_join(x=term2tree, y=term2name, by=c("term"))
+
+go2name_bp = term_annot %>% filter (namespace == "P") %>% select (term, name) %>% setNames (c("GO", "Term"))
+go2name_mf = term_annot %>% filter (namespace == "F") %>% select (term, name) %>% setNames (c("GO", "Term"))
+go2name_cc = term_annot %>% filter (namespace == "C") %>% select (term, name) %>% setNames (c("GO", "Term"))
+
+write.table(go2name_bp,
+            file = file.path(output_dir,paste('GO2name_BP','tab', sep = '.')) ,
+            quote = F,
+            row.names = F,
+            sep = "\t")
+
+write.table(go2name_mf,
+            file = file.path(output_dir,paste('GO2name_MF','tab', sep = '.')) ,
+            quote = F,
+            row.names = F,
+            sep = "\t")
+
+write.table(go2name_cc,
+            file = file.path(output_dir,paste('GO2name_CC','tab', sep = '.')) ,
+            quote = F,
+            row.names = F,
+            sep = "\t")
+
+```
